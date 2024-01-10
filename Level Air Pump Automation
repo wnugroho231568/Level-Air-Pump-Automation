@@ -1,0 +1,55 @@
+import machine
+from machine import Pin, ADC
+import time
+
+# Konfigurasi pin
+pump_pin = Pin(12, Pin.OUT)  
+trigger_pin = 23  
+echo_pin = 22  
+
+# mengukur jarak menggunakan sensor ultrasonik
+def measure_distance():
+    trigger = Pin(trigger_pin, Pin.OUT)
+    echo = Pin(echo_pin, Pin.IN)
+
+    # sinyal ultrasonik
+    trigger.value(0)
+    time.sleep_us(2)
+    trigger.value(1)
+    time.sleep_us(10)
+    trigger.value(0)
+
+    #respons dari sensor
+    pulse_time = machine.time_pulse_us(echo, 1, 30000)  # Timeout 30ms
+    distance_cm = (pulse_time / 2) / 29.1  # Konversi ke cm
+
+    return distance_cm
+
+
+def read_water_level():
+    distance = measure_distance()
+    return distance
+
+
+def control_pump(status):
+    pump_pin.value(status)
+
+# Main loop
+while True:
+    try:
+        # Baca level air
+        water_level = read_water_level()
+        print("Level air:", water_level)
+
+        # Atur kondisi untuk mengendalikan pump
+        if water_level < 40:  
+            control_pump(1)  
+        else:
+            control_pump(0)  
+
+        #membaca ulang level air
+        time.sleep(3)
+
+    except KeyboardInterrupt:
+        print("\nProgram dihentikan.")
+        break
